@@ -1,6 +1,9 @@
 import random
 
+#NOTE: Decryption algorythm is unfinished yet, specifically computation of reverse os S-Box
+
 class cipher:
+    #in __init__() there is an initialization of plaintext, key and text transformed to bin string
     def __init__(self, plaintext):
         self.plaintext = plaintext
         self.binstring = ''
@@ -18,6 +21,7 @@ class cipher:
             keyblock.append(keyi)
         keypr = keyblock[0]
         self.key = ''
+        #desired key length is 128 bits, if it's more than 128, then we generate multiple keys and finaly key is xor of all keys.
         if len(keyblock) > 1:
             for i in range(1, len(keyblock)):
                 keyxor = ''
@@ -31,12 +35,12 @@ class cipher:
         self.roundkeys = [self.key, self.key[16:128 - 16], self.key[28:128 - 28], self.key[37:128 - 37]]
         self.encmessage = ''
         self.contrsum = []
-
+    #initialize S-Box
     Sbox = {'00': ['011000', '111110', '011011', '101101', '100000', '001011', '011010', '001001', '000000', '111101', '000100', '010111', '010010', '011100', '101010', '111111', '110011', '110010', '000110', '010000', '111100', '011111', '110000', '100111', '011001', '110101', '110100', '001100', '000001', '111010', '111001', '100001', '100101', '001010', '100010', '110110', '000111', '011101', '101111', '001000', '100110', '010011', '000010', '101100', '111011', '001111', '011110', '101000', '111000', '110111', '100011', '100100', '001110', '010101', '010001', '001101', '010110', '000011', '101110', '101001', '000101', '110001', '101011', '010100'],
             '01': ['000111', '101101', '001011', '100000', '000110', '010100', '011110', '011111', '111011', '101100', '101001', '001001', '001111', '100001', '110000', '111001', '001000', '010111', '010001', '010010', '000100', '110011', '110110', '011100', '111010', '101011', '001101', '010101', '110101', '011001', '100010', '101000', '111111', '000000', '010011', '000101', '110001', '100100', '100110', '101110', '110111', '110100', '011010', '011101', '000011', '111100', '010000', '001110', '111110', '111000', '110010', '011000', '000010', '010110', '011011', '100011', '001010', '101111', '001100', '100101', '101010', '000001', '111101', '100111'],
             '10': ['010000', '000100', '111110', '101010', '000111', '101110', '100001', '110111', '001001', '110001', '011110', '011111', '111011', '100100', '101001', '111010', '011000', '000010', '111101', '000000', '100110', '100101', '010111', '101101', '010010', '010110', '100011', '101100', '000001', '000011', '011001', '101000', '110000', '100000', '111000', '100010', '110010', '010001', '110110', '001000', '111100', '011010', '000110', '010011', '011100', '110100', '101111', '010100', '110101', '001101', '001100', '100111', '001011', '111001', '010101', '001111', '001110', '110011', '011011', '001010', '111111', '101011', '011101', '000101'],
             '11': ['100110', '101101', '101111', '001110', '001001', '101110', '010111', '111101', '011101', '010100', '101010', '001111', '100100', '110011', '001100', '001000', '101000', '111100', '110010', '110001', '111011', '100111', '000000', '110111', '000110', '101100', '100011', '011110', '100010', '011010', '111010', '101011', '000101', '000011', '011011', '110101', '010011', '011000', '011001', '111001', '111000', '011111', '001010', '000100', '010101', '111111', '000001', '110000', '100101', '001101', '000111', '010010', '000010', '011100', '110100', '111110', '010000', '110110', '101001', '010001', '010110', '100000', '001011', '100001']}
-
+    #XOR is widely used in this encryption method thus it's better to make xor separate function
     def XOR(self, str1, str2):
         xor_res = ''
         for i in range(0, len(str1)):
@@ -45,7 +49,7 @@ class cipher:
             else:
                 xor_res += '0'
         return xor_res
-
+    #if we're unsatisfied with current s-box new can be generated in a random way, note, that it may not be secure enough
     def GenerateNewSBox(self):
         id = [[], [], [], []]
         for i in range(0, 4):
@@ -62,7 +66,7 @@ class cipher:
                 '10': id[2],
                 '11': id[3]}
         return Sbox
-
+    #it's easier to initialize reverse of s box than directly type it into program, also, it is extremely useful in case a new s-box is generated
     def ReverseSBox(self):
         id = []
         for k in range(0, 64):
@@ -79,7 +83,8 @@ class cipher:
 
     def getSBox(self):
         return self.Sbox
-
+        
+    #this method returns word after substitution transformation
     def SBoxEnc(self, word):
         blocklist = []
         for i in range(0, len(word), 8):
@@ -89,13 +94,15 @@ class cipher:
             block_key = blocklist[i][0] + blocklist[i][7]
             block_number = int(blocklist[i][1:7], 2)
             sblock_out.append(self.Sbox[block_key][block_number])
+            #NOTE: control sum is not explicitly used in encryption algorithm, it's here only because I've tried to decrypt using it, however, it doesn't work yet
             cont_sum = 0
             for j in range(1, len(blocklist[i])-1):
                 if blocklist[i][j] == '1':
                     cont_sum += 1
             self.contrsum.append(self.XOR(bin(cont_sum)[2:].zfill(4), self.key[:4]))
         return sblock_out
-
+    
+    
     def PBoxEnc(self, sblock_out):
         pblock_out = []
         for i in range(0, len(sblock_out)):
@@ -135,7 +142,7 @@ class cipher:
         for i in range(0, len(pblock_out)):
             pbox_out += pblock_out[i]
         return pbox_out
-
+    #here we use P-box, S-box and XOR to encrypt message. Also, control sum is added in the end of ciphertext
     def encrypt(self):
         numofblocks = len(self.binstring) // 128 + 1
         expbinstr = self.binstring
@@ -159,7 +166,7 @@ class cipher:
             sum += self.contrsum[i]
         self.encmessage = ciphertext + sum
         return self.encmessage
-
+    #reverse of p-box
     def PBoxDec(self, word):
         blocks = []
         for i in range(0, len(word), 6):
@@ -206,7 +213,7 @@ class cipher:
             orig_order.append(blocks[6])
             orig_order.append(blocks[3])
         return orig_order
-
+    #reverse of s-box. currently not functioning
     def SBoxDec(self, pblocks, contrsum_init):
         RevSBox = self.ReverseSBox()
         res = ''
@@ -230,7 +237,7 @@ class cipher:
                     binj = bin(j)[2:].zfill(2)
                     res += binj[0]+sboxrev[j]+binj[1]
         return res
-
+    #decrypt method which gathers reverse of s-box, p-box and xors values. also it passes control sum to the s-box
     def decrypt(self):
         contrsum = []
         for i in range(54, len(self.encmessage), 4):
