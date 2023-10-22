@@ -9,6 +9,8 @@ Blocks 1 and 9-16 are placed in order that was made in a random way.
 
 Same goes for 12 blocks and 9 blocks. There's different amount of blocks because each S-box decreases amount of bits by 2 in each block, therefore, string length decreases by 2*(number of blocks) for each iteration.
 
+Plaintext is converted to binary, then xor is used on plaintext and round key (which in my case is just a substring of originally generated key), result is splitted into 16 (12 or 9 for following iterations) blocks of 8 bits. After that S-box is used and P-box is used to change initial string and rearrange bits. Values of each block are concatenated in one string and the process is repeated 3 times. Final string is xor'ed one more time and is returned as ciphertext.
+
 Reversed algorithm for P-box is quite simple to build, having the map of permutations.
 
 Substitution block, however, is hard to reverse. Firstly, we need reversed substitution spreadsheet, where intersection of each row and column are characters that were substituted by number in first column of the corresponding row and with key that is first row of the corresponding column.
